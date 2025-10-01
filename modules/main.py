@@ -187,9 +187,22 @@ def notify_owner():
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
     data = {
         "chat_id": OWNER,
-        "text": "𝐁𝐨𝐭 𝐑𝐞𝐬𝐭𝐚𝐫𝐭𝐞𝐝 𝐒𝐮𝐜𝐜𝐞𝐬𝐬𝐟𝐮𝐥𝐥𝐲 ✅"
+        "text": "𝐰𝐞𝐥𝐜𝐨𝐦𝐞 𝐁𝐎𝐒𝐒 ✅"
     }
     requests.post(url, data=data)
+
+def notify_all_users():
+    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+    for user_id in AUTH_USERS:
+        try:
+            data = {
+                "chat_id": user_id,
+                "text": "𝐁𝐨𝐭 𝐑𝐞𝐬𝐭𝐚𝐫𝐭𝐞𝐝 𝐒𝐮𝐜𝐜𝐞𝐬𝐬𝐟𝐮𝐥𝐥𝐲 ✅"
+            }
+            requests.post(url, data=data)
+        except Exception as e:
+            print(f"Failed to notify user {user_id}: {e}")
+
 
 def reset_and_set_commands():
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/setMyCommands"
@@ -233,6 +246,7 @@ def reset_and_set_commands():
     
 if __name__ == "__main__":
     reset_and_set_commands()
-    notify_owner() 
+    notify_owner()
+    notify_all_users()  # Notify all AUTH_USERS
 
 bot.run()
