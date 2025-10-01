@@ -326,9 +326,43 @@ async def drm_handler(bot: Client, m: Message):
                         )
                         continue
                 # If no valid token worked, skip this link
-                if not mpd or not keys:
-                    print(f"⚠️ All tokens expired for link: {url}. Skipping...")
-                    continue  # Move to next link in your loop
+              #  if not mpd or not keys:
+               #     print(f"⚠️ All tokens expired for link: {url}. Skipping...")
+                #    continue  # Move to next link in your loop
+
+                while not mpd or not keys:
+                    # Notify owner that all tokens failed
+                    await app.send_message(
+                        OWNER_ID,
+                        f"⚠️ All tokens failed for link: {url}\nPlease send a new token to resume or 'stop' to cancel."
+                    )
+
+                    # Wait for the owner to send a message
+                    new_msg: Message = await app.listen(OWNER_ID, timeout=None)
+                    new_token = new_msg.text.strip()
+
+                    if new_token.lower() == "stop":
+                        await app.send_message(OWNER_ID, "⏹️ Process stopped by owner.")
+                        globals.cancel_requested = True
+                        return  # exit the handler
+
+                    # Add the new token to your list temporarily
+                    cptokens.insert(0, new_token)
+
+                    # Retry the link with the new token
+                    try:
+                        api_url = f"https://sainibotsdrm.vercel.app/api?url={urllib.parse.quote(url)}&token={new_token}&auth=4443683167"
+                        mpd, keys = helper.get_mps_and_keys(api_url)
+                        if mpd and keys:
+                            token_used = new_token
+                            break
+                    except Exception as e:
+                        await app.send_message(
+                            OWNER_ID,
+                            f"❌ Token failed again: {new_token}\n⚠️ Send another token or 'stop'."
+                        )
+                        mpd, keys = None, None  # ensure loop continues
+
 
                 # Update URL and keys_string for download
                 url = mpd
