@@ -317,7 +317,13 @@ async def drm_handler(bot: Client, m: Message):
                             token_used = token
                             break  # Success, stop trying tokens
                     except Exception as e:
-                        print(f"Token {idx+1} failed: {e}, trying next token...")
+                       # print(f"Token {idx+1} failed: {e}, trying next token...")
+                        await app.send_message(
+                            OWNER_ID,
+                            f"❌ Token failed: {token}\n⚠️ Switching to next token..."
+                        )
+                        continue
+
 
                 # If no valid token worked, skip this link
                 if not mpd or not keys:
@@ -359,8 +365,12 @@ async def drm_handler(bot: Client, m: Message):
                         if signed_url:
                             break
                     except Exception as e:
-                        print(f"Token {idx+1} failed: {e}, trying next token...")
-
+                       # print(f"Token {idx+1} failed: {e}, trying next token...")
+                        await app.send_message(
+                            OWNER_ID,
+                            f"❌ Token failed: {token}\n⚠️ Switching to next token..."
+                        )
+                        continue
                 if not signed_url:
                     print(f"⚠️ All tokens expired for link: {url}. Skipping...")
                     continue
@@ -378,8 +388,16 @@ async def drm_handler(bot: Client, m: Message):
                         signed_url = data.get("url")
                         if signed_url:
                             break
+                  #  except Exception as e:
+                   #     print(f"Token {idx+1} failed: {e}, trying next token...")
+
                     except Exception as e:
-                        print(f"Token {idx+1} failed: {e}, trying next token...")
+                        # print(f"Token {idx+1} failed: {e}, trying next token...")
+                         await app.send_message(
+                             OWNER_ID,
+                             f"❌ Token failed: {token}\n⚠️ Switching to next token..."
+                         )
+                         continue
 
                 if not signed_url:
                     print(f"⚠️ All tokens expired for link: {url}. Skipping...")
@@ -426,7 +444,12 @@ async def drm_handler(bot: Client, m: Message):
                             url = signed_url   # update url after cleanup
                             break
                     except Exception as e:
-                        print(f"Token {idx+1} failed: {e}, trying next token...")
+                       # print(f"Token {idx+1} failed: {e}, trying next token...")
+                        await app.send_message(
+                            OWNER_ID,
+                            f"❌ Token failed: {token}\n⚠️ Switching to next token..."
+                        )
+                        continue
 
                 if not signed_url:
                     print(f"⚠️ All tokens expired for link: {url}. Skipping...")
