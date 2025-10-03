@@ -351,7 +351,28 @@ async def send_vid(bot: Client, m: Message, cc, filename, vidwatermark, thumb, n
         await bot.send_video(channel_id, w_filename, caption=cc, supports_streaming=True, height=720, width=1280, thumb=thumbnail, duration=dur, progress=progress_bar, progress_args=(reply, start_time))
     except Exception:
         await bot.send_document(channel_id, w_filename, caption=cc, progress=progress_bar, progress_args=(reply, start_time))
-    os.remove(w_filename)
+  #  os.remove(w_filename)
+    #await reply.delete(True)
+  #  await reply1.delete(True)
+  #  os.remove(f"{filename}.jpg")
+
     await reply.delete(True)
     await reply1.delete(True)
-    os.remove(f"{filename}.jpg")
+
+    def safe_remove(file_path):
+        try:
+            if os.path.exists(file_path):
+                os.remove(file_path)
+        except Exception:
+            pass
+
+    safe_remove(w_filename)
+    safe_remove(filename)               # Remove original video too, if safe
+    safe_remove(f"{filename}.jpg")     # Remove thumbnail
+
+# If you have any temporary files or folders (add more if needed)
+# safe_remove("video.mp4")
+# safe_remove("audio.m4a")
+# Or remove entire temp folder, e.g.
+# import shutil
+# shutil.rmtree("downloads", ignore_errors=True)
