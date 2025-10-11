@@ -199,7 +199,7 @@ async def decrypt_and_merge_video(mpd_url, keys_string, output_path, output_name
         # Merge video and audio with watermark if enabled
         if globals.vidwatermark != "/d":
             watermark_filter = f"drawtext=fontfile=vidwater.ttf:text='{globals.vidwatermark}':fontcolor=black@0.7:fontsize=h/10:x=(w-text_w)/9:y=(h-text_h)/9"
-            cmd4 = f'ffmpeg -i "{output_path}/video.mp4" -i "{output_path}/audio.m4a" -vf "{watermark_filter}" -c:v libx264 -preset ultrafast -crf 23 -c:a copy "{output_path}/{output_name}.mp4"'
+            cmd4 = f'ffmpeg -i "{output_path}/video.mp4" -i "{output_path}/audio.m4a" -vf "{watermark_filter}" -c:v libx264 -preset veryfast -crf 25 -c:a copy "{output_path}/{output_name}.mp4"'
         else:
             cmd4 = f'ffmpeg -i "{output_path}/video.mp4" -i "{output_path}/audio.m4a" -c copy "{output_path}/{output_name}.mp4"'
         
