@@ -43,8 +43,8 @@ def get_mps_and_keys2(api_url):
         response = requests.get(api_url, timeout=10)
         response.raise_for_status()
         data = response.json()
-        mpd = data.get('url')
-        keys = data.get('keys', [])
+        mpd = data.get("url") or data.get("URL") or data.get("mpd") or data.get("MPD")
+        keys = data.get("keys") or data.get("KEYS") or []
         if not mpd or not keys:
             return None, None
         return mpd, keys
@@ -58,9 +58,8 @@ def get_mps_and_keys(api_url):
         response.raise_for_status()
         data = response.json()
 
-        mpd = data.get("url")
-        keys = data.get("keys", [])
-
+        mpd = data.get("url") or data.get("URL") or data.get("mpd") or data.get("MPD")
+        keys = data.get("keys") or data.get("KEYS") or []
         # If url or keys missing, treat as failure
         if not mpd or not keys:
             return None, None
