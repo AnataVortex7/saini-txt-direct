@@ -20,6 +20,7 @@ from pathlib import Path
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import unpad
 from base64 import b64decode
+import globals
 
 def duration(filename):
     result = subprocess.run(["ffprobe", "-v", "error", "-show_entries",
@@ -43,8 +44,11 @@ def get_mps_and_keys2(api_url):
         response = requests.get(api_url, timeout=10)
         response.raise_for_status()
         data = response.json()
+    #    mpd = data.get('url')
+     #   keys = data.get('keys', [])
         mpd = data.get("url") or data.get("URL") or data.get("mpd") or data.get("MPD")
         keys = data.get("keys") or data.get("KEYS") or []
+
         if not mpd or not keys:
             return None, None
         return mpd, keys
@@ -58,8 +62,12 @@ def get_mps_and_keys(api_url):
         response.raise_for_status()
         data = response.json()
 
+    #    mpd = data.get("url")
+     #   keys = data.get("keys", [])
         mpd = data.get("url") or data.get("URL") or data.get("mpd") or data.get("MPD")
         keys = data.get("keys") or data.get("KEYS") or []
+
+
         # If url or keys missing, treat as failure
         if not mpd or not keys:
             return None, None
@@ -188,9 +196,16 @@ async def decrypt_and_merge_video(mpd_url, keys_string, output_path, output_name
         if not video_decrypted or not audio_decrypted:
             raise FileNotFoundError("Decryption failed: video or audio file not found.")
 
-        cmd4 = f'ffmpeg -i "{output_path}/video.mp4" -i "{output_path}/audio.m4a" -c copy "{output_path}/{output_name}.mp4"'
+        # Merge video and audio with watermark if enabled
+        if globals.vidwatermark != "/d":
+            watermark_filter = f"drawtext=fontfile=vidwater.ttf:text='{globals.vidwatermark}':fontcolor=black@0.7:fontsize=h/10:x=(w-text_w)/9:y=(h-text_h)/9"
+            cmd4 = f'ffmpeg -i "{output_path}/video.mp4" -i "{output_path}/audio.m4a" -vf "{watermark_filter}" -c:v libx264 -preset ultrafast -crf 23 -c:a copy "{output_path}/{output_name}.mp4"'
+        else:
+            cmd4 = f'ffmpeg -i "{output_path}/video.mp4" -i "{output_path}/audio.m4a" -c copy "{output_path}/{output_name}.mp4"'
+        
         print(f"Running command: {cmd4}")
         os.system(cmd4)
+        
         if (output_path / "video.mp4").exists():
             (output_path / "video.mp4").unlink()
         if (output_path / "audio.m4a").exists():
@@ -330,15 +345,9 @@ async def send_vid(bot: Client, m: Message, cc, filename, vidwatermark, thumb, n
         else:
             thumbnail = thumb  
         
-        if vidwatermark == "/d":
-            w_filename = f"{filename}"
-        else:
-            w_filename = f"w_{filename}"
-            font_path = "vidwater.ttf"
-            subprocess.run(
-                f'ffmpeg -i "{filename}" -vf "drawtext=fontfile={font_path}:text=\'{vidwatermark}\':fontcolor=white@0.3:fontsize=h/6:x=(w-text_w)/2:y=(h-text_h)/2" -codec:a copy "{w_filename}"',
-                shell=True
-            )
+         # Watermark already applied during download for yt-dlp videos
+        # For DRM videos, it's applied in decrypt_and_merge_video
+        w_filename = filename
             
     except Exception as e:
         await m.reply_text(str(e))
@@ -350,28 +359,16 @@ async def send_vid(bot: Client, m: Message, cc, filename, vidwatermark, thumb, n
         await bot.send_video(channel_id, w_filename, caption=cc, supports_streaming=True, height=720, width=1280, thumb=thumbnail, duration=dur, progress=progress_bar, progress_args=(reply, start_time))
     except Exception:
         await bot.send_document(channel_id, w_filename, caption=cc, progress=progress_bar, progress_args=(reply, start_time))
-  #  os.remove(w_filename)
-    #await reply.delete(True)
-  #  await reply1.delete(True)
-  #  os.remove(f"{filename}.jpg")
-
+    os.remove(w_filename)
     await reply.delete(True)
     await reply1.delete(True)
+    os.remove(f"{filename}.jpg")
 
-    def safe_remove(file_path):
-        try:
-            if os.path.exists(file_path):
-                os.remove(file_path)
-        except Exception:
-            pass
-
-    safe_remove(w_filename)
-    safe_remove(filename)               # Remove original video too, if safe
-    safe_remove(f"{filename}.jpg")     # Remove thumbnail
-
-# If you have any temporary files or folders (add more if needed)
-# safe_remove("video.mp4")
-# safe_remove("audio.m4a")
-# Or remove entire temp folder, e.g.
-# import shutil
-# shutil.rmtree("downloads", ignore_errors=True)
+        # Cleanup temporary files and cache
+    try:
+        for f in os.listdir():
+            if f.endswith((".part", ".m4a", ".mp4.temp", ".aria2", ".jpg", ".mkv", ".webm")):
+                os.remove(f)
+        print("🧹 Cache and temp files cleaned successfully.")
+    except Exception as e:
+        print(f"Cleanup error: {e}")
